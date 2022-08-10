@@ -19,11 +19,13 @@ int den = 0; //mysleno den jako svetlo nebo noc ne jako pondeli utery
 int denBefore = 0; //toto uz vypisuje
 int radek = 0;
 
+String message;
+
 const int C_VERB_DEBUG = 2;
 const int C_VERB_NORM = 1;
 const int C_VERB_LOW = 0;
 
-const int C_VERBOSITY = C_VERB_LOW;
+const int C_VERBOSITY = C_VERB_NORM;
 
 //----------------------------------------------------------------------------------
 
@@ -34,7 +36,7 @@ void Tisk (String message, int verbose) {
 }
 
 void setup() {
-  String message;
+  
 
   Serial.begin(9600);
   
@@ -57,45 +59,40 @@ void setup() {
 
 //-----------OTEVRENI SOUBORU--------------
 
-   if (myFile) {
-    
+   if (myFile) {   
     while (myFile.available()) {  
-      //Serial.println("Jsme zde?");
       String list  = myFile.readStringUntil('\n');      //ted to asi funguje
-      //Serial.println("Přečteno");
-      //Serial.write(myFile.read()); 
-
-    
-      //Serial.println(list);
 
 //-------------INTENSITA-----------------------      
-      Intensity = list.toInt();  //mam problem s ukladanim toho do Intensity, rika to ze intensity je furt nula //TOHLE JESTE NEFUNGUJE   
+      Intensity = list.toInt();  //list je string ale
       
-      Serial.print("Intensity - ");  
-      Serial.println(Intensity);
       
       IntensityBefore = IntensityNow; //Hodnota intenzity svetla ted(predchozi mereni) se ulozi do Before
       IntensityNow = Intensity; //a IntensityNow se updatuje novou intensitou
 //----------------TIMESTAMP-A-RADEK--------------------------------      
-      cas = cas +5; //hodiny se posunou o 5 minut tzv jedno mereni    //FUNGUJE
+      cas = cas +5; //hodiny se posunou o 5 minut tzv jedno mereni   
       radek++;
-      //Serial.print("Radek - ");
-      //Serial.println(radek);   
+
       message = "Radek ";
       message = message + radek;
       Tisk(message, C_VERB_DEBUG);      
 
-      //Serial.print("timestamp - ");
-      //Serial.print(cas);
-      //Serial.println(" min");
+
       message = "timestamp - ";
       message = message + cas + " min";
       Tisk(message, C_VERB_NORM);      
 //-------------FUNKCE--------------------------      
       DayOrNight(); //volani funkci
-      NoonDetection();
-      NightPredict();
-      ZobrazCas();
+
+      if (den == 1){
+        NoonDetection();
+        ZobrazCas();
+        if(casPoledne !=  0){
+          NightPredict(); 
+        }
+
+      }
+
       //Serial.println("Funkce called"); 
            
       Serial.println("-----------------------");  
@@ -133,12 +130,14 @@ void DayOrNight(){
   denBefore = den;  //mysleno den jako svetlo nebo noc ne jako pondeli utery
   if (IntensityNow > 100){
     den = 1;
-    Serial.println("DEN"); 
+    message = "DEN";
+    Tisk(message, C_VERB_NORM);    
   }
   
   else {
     den = 0;
-    Serial.println("NOC"); 
+    message = "NOC";
+    Tisk(message, C_VERB_NORM);   
   }
   
   if(denBefore < den){
@@ -155,16 +154,19 @@ void NoonDetection(){
     if(IntensityNow > IntensityNoon){
       IntensityNoon = IntensityNow;
       casPoledne = cas;
-      Serial.println("Je poledne");
+      message = "Je Poledne";
+      Tisk(message, C_VERB_DEBUG);   
     }
    else{
-     Serial.println("Neni poledne");   //obcas neukaze nulu, tak v polovine pripadu
+      message = "Není Poledne";
+      Tisk(message, C_VERB_DEBUG);   
    }       
     
   }
     
   else{
-   Serial.println("Neni poledne");   //obcas neukaze nulu, tak v polovine pripadu
+      message = "Není Poledne";
+      Tisk(message, C_VERB_NORM); 
   }       
  
   
@@ -181,10 +183,10 @@ void ZobrazCas(){ //zobrazuje cas, funguje pouze po poledni
       soucasnycas = cas - casPoledne; //pocita kolik je prave hodin od poledne
       hodina = soucasnycas / 60 + 12; //vypocet hodin
       minuta = soucasnycas % 60; //vypocet minut
-      Serial.println("Aktualni cas"); //vypise momentalni cas
-      Serial.print(hodina);
-      Serial.print(":");
-      Serial.println(minuta);
+
+      message = "AKtualni cas";
+      message = message + hodina + ":" + minuta;
+      Tisk(message, C_VERB_NORM);           
   }
 }
 
@@ -198,10 +200,10 @@ void NightPredict(){ //predpovida zapad slunce
   minutaNight = casNight % 60;  
 
 //------------------------------------
-  Serial.print ("Predpovezeny cas vecera "); //vypise cas zapadu slunce
-  Serial.print (hodinaNight);
-  Serial.print (":");
-  Serial.println (minutaNight);      
+
+  message = "Predpovezeny cas vecera";
+  message = message + hodinaNight + ":" + minutaNight;
+  Tisk(message, C_VERB_NORM);          
   
 }
 
