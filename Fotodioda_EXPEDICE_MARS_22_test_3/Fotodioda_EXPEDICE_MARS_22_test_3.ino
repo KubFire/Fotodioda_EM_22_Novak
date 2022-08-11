@@ -1,14 +1,15 @@
-
-#include <SPI.h>
+//-----------------------KNIHOVNY---------------------------------------
+#include <SPI.h> 
 #include <SD.h>
-#include <Adafruit_GFX.h>    // Core graphics library
+
+#include <Adafruit_GFX.h>    // Core graphics library  
 #include <MCUFRIEND_kbv.h>   // Hardware-specific library
-MCUFRIEND_kbv tft;
+MCUFRIEND_kbv tft; //Pouze pro SD kartu displeje
 
 File myFile;
 
-
-int IntensityNoon = 0; //globalni prommenne
+//-----------------------PROMENNE-------------------------------
+int IntensityNoon = 0; 
 int IntensityNow = 0;
 int IntensityBefore = 0;
 int Intensity = 0;
@@ -16,8 +17,8 @@ int IntensityMax = 0;
 int cas = 0;
 int casPoledne = 0;
 int soucasnycas = 0;
-int den = 0; //mysleno den jako svetlo nebo noc ne jako pondeli utery
-int denBefore = 0; //toto uz vypisuje
+int den = 0;                           //mysleno den jako svetlo nebo noc ne jako pondeli utery
+int denBefore = 0; 
 int radek = 0;
 int timestampNoon = 0;
 int minutaNoon = 0;
@@ -33,84 +34,76 @@ const int C_VERB_LOW = 0;
 
 const int C_VERBOSITY = C_VERB_DEBUG;
 
-//----------------------------------------------------------------------------------
+//-------------------------VERBOSITY-----------------------------------
 
-void Tisk (String message, int verbose) {
+void Tisk (String message, int verbose) { //Slozitejsi nahrada Serial.print
   if (verbose <= C_VERBOSITY) {
     Serial.println(message);    
   }
 }
-
+//---------------------------SETUP------------------------------------
 void setup() {
   
 
-  Serial.begin(9600);
+  Serial.begin(9600);                   //Komunikace
   
 //-----------KOMUNIKACE-S-SD-KARTOU--------------  
   while (!Serial) {
-    ; // wait for serial port to connect. Needed for native USB port only
+    ; 
   }
 
 
 
-  Serial.print("Initializing SD card...");
+  Serial.print("Initializace SD karty..."); 
 
   if (!SD.begin(4)) {
-    Serial.println("initialization failed!");
+    Serial.println("initializace neúspěšná!");
     while (1);
   }
-  Serial.println("initialization done."); 
-  myFile = SD.open("test.txt");
-  
+  Serial.println("initializace úspěšná"); 
+  myFile = SD.open("test.txt");//testovaci
+  //myFile = SD.open("data.txt"); 
 
 //-----------OTEVRENI SOUBORU--------------
 
    if (myFile) {   
     while (myFile.available()) {  
-      String list  = myFile.readStringUntil('\n');      //ted to asi funguje
+      String list  = myFile.readStringUntil('\n');      
 
 //-------------INTENSITA-----------------------      
-      Intensity = list.toInt();  //list je string ale  
+      Intensity = list.toInt();           //prevod ze stringu na int 
       
-      message = "Intensita světla - ";
+      message = "Intensita světla - ";    //VERBOSITY
       message = message + Intensity;
       Tisk(message, C_VERB_NORM);    
       
       
-      IntensityBefore = IntensityNow; //Hodnota intenzity svetla ted(predchozi mereni) se ulozi do Before
-      IntensityNow = Intensity; //a IntensityNow se updatuje novou intensitou
+      IntensityBefore = IntensityNow;     //Hodnota intenzity svetla ted(predchozi mereni) se ulozi do Before
+      IntensityNow = Intensity;           //a IntensityNow se updatuje novou intensitou
 //----------------TIMESTAMP-A-RADEK--------------------------------      
       cas = cas +5; //hodiny se posunou o 5 minut tzv jedno mereni   
       radek++;
       //Serial.println(casPoledne);
-      message = "Radek ";
+      message = "Radek ";               //VERBOSITY
       message = message + radek;
       Tisk(message, C_VERB_DEBUG);      
 
 
-      message = "timestamp - ";
+      message = "timestamp - ";         //VERBOSITY
       message = message + cas + " min";
       Tisk(message, C_VERB_NORM);      
 //-------------FUNKCE--------------------------      
       DayOrNight(); //volani funkci
 
-      if (den == 1){
+      if (den == 1){ //Vola funkce co funguji jen ve dnee
         NoonDetection();
         ZobrazCas();
         TimePredict();
-
-          NightPredict(); 
-        
-
-      }
-
-      //Serial.println("Funkce called"); 
-           
+        NightPredict(); 
+      }         
       Serial.println("-----------------------");  
- 
 //------------DELAY----------------------------      
-      delay(500);//5 minut v ms
-
+      delay(500);//testovaci
 
     }
     // close the file:
@@ -128,18 +121,14 @@ void setup() {
 void loop() {
 
 
-  //Intensity = analogRead(A0); //z fotodiody si precte intenzitu a ulozi do Intensity
-  //Serial.println("svetlo"); // vypise do serialu
-  //Serial.println(Intensity); // vypise do serialu
-  //Intensity = random(60, 1000);
-  //Intensity == Intensity++; //testovani, FUNGUJE
-  
+  Intensity = analogRead(A0);       //z fotodiody si precte intenzitu a ulozi do Intensity
+   //delay(300000);  //5 minut v ms
 }
 
 //----------------------DAY-OR-NIGHT------------------------------------------ F
 void DayOrNight(){ 
-  denBefore = den;  //mysleno den jako svetlo nebo noc ne jako pondeli utery
-  if (IntensityNow > 100){
+  denBefore = den;                  //mysleno den jako svetlo nebo noc ne jako pondeli utery
+  if (IntensityNow > 100){          //pokud intenzita 100+ = den a vypise do VERBOSITY
     den = 1;
     message = "DEN";
     Tisk(message, C_VERB_NORM);  
@@ -153,44 +142,44 @@ void DayOrNight(){
   
   if(denBefore < den){
     cas = 0;
-    casPoledne = 0; //kdyz vyjde slunce vynuluje cas poledne a cas aby se v dalsich dnech nematly hodiny
+    casPoledne = 0;                   //kdyz vyjde slunce vynuluje cas(timestamp) poledne a cas aby se v dalsich dnech nematly hodiny
   }
   
 }
 
 //-------------------------------NOON-DETECTION------------------------------- FFF
-void NoonDetection(){     
-  if(IntensityMax > IntensityNow){
+void NoonDetection(){                 //zjisti kdy je poledne
+  if(IntensityMax > IntensityNow){    //s kazdym merenim kdy je intensity nizsi nez max se pricte 1
     hodnota++;                             
   }
   else{
-    hodnota = 0;
+    hodnota = 0;                      //pokud je intensity vyssi hodnota se vynuluje
   }
-  if (hodnota == 5){ 
+  if (hodnota == 5){                  //pokud se pricetlo 5krat znamena to ze je poledne. Prepisou se hodnoty a vypise do VERBOSITY
         IntensityNoon = IntensityMax;
         casPoledne = casMax;
         Serial.println("Hodnota = 5 ");         
         Serial.print("timestampNoon - ");
         Serial.println(timestampNoon);
-        message = "Pred 25 min bylo Poledne";                                                                   //TOHLE UŽ FUNGUJE!!!
+        message = "Pred 25 min bylo Poledne";                                                                  
         Tisk(message, C_VERB_DEBUG);
         timestampNoon = casPoledne;  
   }     
-  if(IntensityNow > IntensityBefore){ 
-    if(IntensityNow > IntensityMax){
-      IntensityMax = IntensityNow;
-      casMax = cas;  
-      message = "Nejvyšší naměřená hodnota so far";
+  if(IntensityNow > IntensityBefore){ //Pokud je intenzita ted vetsi jak minule mereni 
+    if(IntensityNow > IntensityMax){  //Pokud je intenzita ted vetsi jak nejvyssi mereni
+      IntensityMax = IntensityNow;    //Do Nejvyssi intenzity se ulozi toto mereni
+      casMax = cas;                   //a do timestamp max mereni se ulozi nynejsi timestamp
+      message = "Nejvyšší naměřená hodnota so far"; //Vypise VERBOSITY
       Tisk(message, C_VERB_DEBUG);            
    }    
     else{
-      message = "Není Poledne";
-      Tisk(message, C_VERB_DEBUG); 
+      message = "Není Poledne";     //pokud intensity ted neni vyssi jak nejvyssi namerena
+      Tisk(message, C_VERB_DEBUG);  //VERBOSITY - neni poledne
    }          
  }  
   else{
-      message = "Není Poledne";
-      Tisk(message, C_VERB_NORM); 
+      message = "Není Poledne";   //pokud intensity ted neni vyssi jak predchozi namerena
+      Tisk(message, C_VERB_NORM); //VERBOSITY - neni poledne
        
   }        
 }
@@ -198,7 +187,7 @@ void NoonDetection(){
 
 //----------------------------ZOBRAZ-CAS--------------------------------F
 void ZobrazCas(){ //zobrazuje cas, funguje pouze po poledni
-  int hodina = 0;                                                                     //Jak to udelat aby jelo jen po poledni?
+  int hodina = 0;       
   int minuta = 0;
 
 //----------------------------------------
@@ -207,7 +196,7 @@ void ZobrazCas(){ //zobrazuje cas, funguje pouze po poledni
       hodina = soucasnycas / 60 + 12; //vypocet hodin
       minuta = soucasnycas % 60; //vypocet minut
 
-      message = "Aktualni cas";
+      message = "Aktualni cas(Odpoledne)";
       message = message + hodina + ":" + minuta;
       Tisk(message, C_VERB_NORM);           
 
@@ -218,24 +207,24 @@ void NightPredict(){ //predpovida zapad slunce
   int casNight = 0; //promenne
   int hodinaNight = 0;
   int minutaNight = 0;                                                                  
-  casNight = casPoledne;
-  hodinaNight = casNight / 60 + 12;
-  minutaNight = casNight % 60;  
+  casNight = casPoledne;  //vypocet
+  hodinaNight = casNight / 60 + 12; //vypocet hodiny
+  minutaNight = casNight % 60;  //vypocet minuty
 
 //------------------------------------
 
-  message = "Predpovezeny cas vecera";
+  message = "Predpovezeny cas vecera"; //VERBOSITY casu
   message = message + hodinaNight + ":" + minutaNight;
   Tisk(message, C_VERB_NORM);          
   
 }
 
 //----------------------------------------------------------------------------------------
-void TimePredict(){
-   hodinaNoon =(720 - (timestampNoon - cas))/60; 
+void TimePredict(){ //Predpovida cas dopoledne, pomoci timestamp poledne minuly den
+   hodinaNoon =(720 - (timestampNoon - cas))/60;  //Vypocet 
    minutaNoon =((720 - (timestampNoon - cas))%60);
   
-  message = "Predpovezeny Cas";
+  message = "Predpovezeny Cas(Dopoledne)"; //VERBOSITY
   message = message + hodinaNoon + ":" + minutaNoon;
   Tisk(message, C_VERB_NORM);          
 }  
