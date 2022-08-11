@@ -2,10 +2,6 @@
 #include <SPI.h> 
 #include <SD.h>
 
-#include <Adafruit_GFX.h>    // Core graphics library  
-#include <MCUFRIEND_kbv.h>   // Hardware-specific library
-MCUFRIEND_kbv tft; //Pouze pro SD kartu displeje
-
 File myFile;
 
 //-----------------------PROMENNE-------------------------------
@@ -41,7 +37,7 @@ void Tisk (String message, int verbose) { //Slozitejsi nahrada Serial.print
     Serial.println(message);    
   }
 }
-//---------------------------SETUP------------------------------------
+//---------------------------SETUP------------------------------------ F
 void setup() {
   
 
@@ -51,9 +47,6 @@ void setup() {
   while (!Serial) {
     ; 
   }
-
-
-
   Serial.print("Initializace SD karty..."); 
 
   if (!SD.begin(4)) {
@@ -61,26 +54,25 @@ void setup() {
     while (1);
   }
   Serial.println("initializace úspěšná"); 
-  myFile = SD.open("test.txt");//testovaci
-  //myFile = SD.open("data.txt"); 
+  myFile = SD.open("data.txt"); 
 
-//-----------OTEVRENI SOUBORU--------------
+//-----------OTEVRENI SOUBORU-------------- F 
 
    if (myFile) {   
     while (myFile.available()) {  
       String list  = myFile.readStringUntil('\n');      
 
-//-------------INTENSITA-----------------------      
-      Intensity = list.toInt();           //prevod ze stringu na int 
+//-------------INTENSITA----------------------- F     
+      Intensity = list.toInt();           //prevod ze stringu na int //jen testovaci
       
       message = "Intensita světla - ";    //VERBOSITY
       message = message + Intensity;
       Tisk(message, C_VERB_NORM);    
-      
+     
       
       IntensityBefore = IntensityNow;     //Hodnota intenzity svetla ted(predchozi mereni) se ulozi do Before
       IntensityNow = Intensity;           //a IntensityNow se updatuje novou intensitou
-//----------------TIMESTAMP-A-RADEK--------------------------------      
+//----------------TIMESTAMP-A-RADEK-------------------------------- F     
       cas = cas +5; //hodiny se posunou o 5 minut tzv jedno mereni   
       radek++;
       //Serial.println(casPoledne);
@@ -92,37 +84,75 @@ void setup() {
       message = "timestamp - ";         //VERBOSITY
       message = message + cas + " min";
       Tisk(message, C_VERB_NORM);      
-//-------------FUNKCE--------------------------      
+//-------------FUNKCE-------------------------- F      
       DayOrNight(); //volani funkci
 
-      if (den == 1){ //Vola funkce co funguji jen ve dnee
-        NoonDetection();
-        ZobrazCas();
-        TimePredict();
-        NightPredict(); 
+      if (den == 1){ //Vola Funkce co funguji jen ve dnee
+        NoonDetection(); //detekuje poledne
+        ZobrazCas();   //ukazuje    cas odpoledne
+        TimePredict(); //predpovida cas dopoledne
+        NightPredict(); //predpovida cas zapadu slunce
       }         
-      Serial.println("-----------------------");  
-//------------DELAY----------------------------      
-      delay(500);//testovaci
-
+//------------DELAY---------------------------- F     
+      delay(50);
+//----------------------------------------------
+      message = "celkove mereni - "; //mereni do excelu
+      message = message + radek + "; " + Intensity + "; " + cas + "; " + den + "; " + timestampNoon + "; ";
+      Tisk(message, C_VERB_NORM);   
+      
+      Serial.println("-----------------------");       
     }
-    // close the file:
     myFile.close();
    } 
    else {
-      // if the file didn't open, print an error:
-      Serial.println("error opening test.txt");
+      Serial.println("error při otevírání data.txt");
    } 
-
 }
 
 
 //-----------------------------LOOP------------------------------------- F
 void loop() {
-
-
+  
+//-------------INTENSITA-----------------------      
   Intensity = analogRead(A0);       //z fotodiody si precte intenzitu a ulozi do Intensity
-   //delay(300000);  //5 minut v ms
+  message = "Intensita světla - ";    //VERBOSITY
+  message = message + Intensity;
+  Tisk(message, C_VERB_NORM);    
+  
+  
+  IntensityBefore = IntensityNow;     //Hodnota intenzity svetla ted(predchozi mereni) se ulozi do Before
+  IntensityNow = Intensity;           //a IntensityNow se updatuje novou intensitou
+//----------------TIMESTAMP-A-RADEK--------------------------------      
+  cas = cas +5; //hodiny se posunou o 5 minut tzv jedno mereni   
+  radek++;
+  //Serial.println(casPoledne);
+  message = "Radek ";               //VERBOSITY
+  message = message + radek;
+  Tisk(message, C_VERB_DEBUG);      
+  
+  
+  message = "timestamp - ";         //VERBOSITY
+  message = message + cas + " min";
+  Tisk(message, C_VERB_NORM);      
+//-------------FUNKCE--------------------------      
+  DayOrNight(); //volani funkci
+  
+  if (den == 1){ //Vola Funkce co funguji jen ve dnee
+    NoonDetection(); //detekuje poledne
+    ZobrazCas();   //ukazuje    cas odpoledne
+    TimePredict(); //predpovida cas dopoledne
+    NightPredict(); //predpovida cas zapadu slunce
+  }         
+  
+
+//----------------------------------------------
+  message = "celkove mereni - "; //mereni do excelu
+  message = message + radek + "; " + Intensity + "; " + cas + "; " + den + "; " + timestampNoon + "; ";
+  Tisk(message, C_VERB_NORM);   
+  
+  Serial.println("-----------------------");  
+//------------DELAY----------------------------      
+  delay(300000);//5 min v milisec   
 }
 
 //----------------------DAY-OR-NIGHT------------------------------------------ F
