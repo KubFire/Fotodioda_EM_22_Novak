@@ -23,10 +23,9 @@ int hodnota = 0;
 int casMax = 0;
 
 String message;
-
-const int C_VERB_DEBUG = 2;
-const int C_VERB_NORM = 1;
-const int C_VERB_LOW = 0;
+const int C_VERB_DEBUG = 2; //(Debugovací)
+const int C_VERB_NORM = 1; //(Normální)
+const int C_VERB_LOW = 0;  //(pro Graf v Excelu)
 
 const int C_VERBOSITY = C_VERB_DEBUG;
 
@@ -98,7 +97,7 @@ void setup() {
 //----------------------------------------------
       message = "celkove mereni - "; //mereni do excelu
       message = message + radek + "; " + Intensity + "; " + cas + "; " + den + "; " + timestampNoon + "; ";
-      Tisk(message, C_VERB_NORM);   
+      Tisk(message, C_VERB_LOW);   
       
       Serial.println("-----------------------");       
     }
